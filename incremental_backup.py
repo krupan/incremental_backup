@@ -53,6 +53,7 @@ subprocess.call('ln -s {0} {1}/current'.format(
 # WEEKS_TO_KEEP_MONTHLIES of monthly backups.
 
 daily_backup_cutoff = NOW - datetime.timedelta(days=DAYLIES_TO_KEEP)
+print "daily cutoff: " + str(daily_backup_cutoff)
 
 # I wish this were possible, but months are tricky (what is 6 months
 # from the last day of a month?  you can't just add 6 to the month
@@ -60,8 +61,10 @@ daily_backup_cutoff = NOW - datetime.timedelta(days=DAYLIES_TO_KEEP)
 # four_months_ago = NOW - datetime.timedelta(months=4)
 # so do this instead:
 monthly_backup_cutoff = NOW - datetime.timedelta(weeks=WEEKS_TO_KEEP_MONTHLIES)
+print "montly cutoff: " + str(monthly_backup_cutoff)
 
 for filename in glob.glob('{0}/*'.format(BACKUP_DESTINATION)):
+    print "looking at " + filename
     if 'current' in filename:
         continue
     if 'lost+found' in filename:
@@ -70,9 +73,11 @@ for filename in glob.glob('{0}/*'.format(BACKUP_DESTINATION)):
     file_date = datetime.datetime.strptime(filename, '{0}/{1}'.format(
             BACKUP_DESTINATION, BACKUP_FORMAT))
     if file_date < monthly_backup_cutoff:
+        print "monthly cuttoff: deleting " + filename
         subprocess.call('rm -rf {0}'.format(filename), shell=True)
         continue
     if(file_date < daily_backup_cutoff and
        file_date.day != MONTHLY_DATE_TO_KEEP):
+        print "daily cutoff: deleting " + filename
         subprocess.call('rm -rf {0}'.format(filename), shell=True)
         continue
