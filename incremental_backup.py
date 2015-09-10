@@ -71,6 +71,8 @@ for filename in glob.glob('{0}/*'.format(BACKUP_DESTINATION)):
             BACKUP_DESTINATION, BACKUP_FORMAT))
     if file_date < monthly_backup_cutoff:
         subprocess.call('rm -rf {0}'.format(filename), shell=True)
+        continue
     if(file_date < daily_backup_cutoff and
        file_date.day != MONTHLY_DATE_TO_KEEP):
         subprocess.call('rm -rf {0}'.format(filename), shell=True)
+        continue
