@@ -64,6 +64,8 @@ monthly_backup_cutoff = NOW - datetime.timedelta(weeks=WEEKS_TO_KEEP_MONTHLIES)
 for filename in glob.glob('{0}/*'.format(BACKUP_DESTINATION)):
     if 'current' in filename:
         continue
+    if 'lost+found' in filename:
+        continue
     # turn string directory name into datetime object;
     file_date = datetime.datetime.strptime(filename, '{0}/{1}'.format(
             BACKUP_DESTINATION, BACKUP_FORMAT))
