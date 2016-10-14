@@ -16,9 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ######################################################################
 
+import os
+import sys
+import glob
 import datetime
 import subprocess
-import glob
 
 BACKUP_DESTINATION = "/media/wdelements750"
 NOW = datetime.datetime.now()
@@ -26,9 +28,12 @@ BACKUP_FORMAT = "backup-%Y-%m-%d_%H:%M:%S"
 # which day of the month to keep for monthlies:
 MONTHLY_DATE_TO_KEEP = 28
 # how many weeks of monthly backups to keep:
-WEEKS_TO_KEEP_MONTHLIES = 52
+WEEKS_TO_KEEP_MONTHLIES = 26
 # how many days of daily backups to keep:
-DAYLIES_TO_KEEP = 42
+DAYLIES_TO_KEEP = 7
+
+if not os.path.isdir(BACKUP_DESTINATION):
+    sys.exit("backup destination: {} doesn't exist".format(BACKUP_DESTINATION))
 
 # rsync everything starting at the filesystem root, ignoring other
 # mounted filesystems, using hard links for files already found in
