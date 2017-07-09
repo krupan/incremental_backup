@@ -22,7 +22,8 @@ import glob
 import datetime
 import subprocess
 
-BACKUP_DESTINATION = "/media/wdelements750"
+BACKUP_DESTINATION = "/backup"
+BACKUP_REFERENCE = "/current"
 NOW = datetime.datetime.now()
 BACKUP_FORMAT = "backup-%Y-%m-%d_%H:%M:%S"
 # which day of the month to keep for monthlies:
@@ -32,21 +33,24 @@ WEEKS_TO_KEEP_MONTHLIES = 26
 # how many days of daily backups to keep:
 DAYLIES_TO_KEEP = 7
 
-if not os.path.isdir(BACKUP_DESTINATION):
-    sys.exit("backup destination: {} doesn't exist".format(BACKUP_DESTINATION))
+if not os.path.isdir(BACKUP_DESTINATION + BACKUP_REFERENCE):
+    sys.exit("backup reference: {} doesn't exist".format(
+        BACKUP_DESTINATION + BACKUP_REFERENCE))
 
 # rsync everything starting at the filesystem root, ignoring other
 # mounted filesystems, using hard links for files already found in
 # --link-dest:
 subprocess.call('rsync  -vaxAX --ignore-errors '
-                '--link-dest={0}/current / {0}/{1}'.format(
-        BACKUP_DESTINATION, NOW.strftime(BACKUP_FORMAT)), shell=True)
+                '--link-dest={0}{1} / {0}/{2}'.format(
+        BACKUP_DESTINATION, BACKUP_REFERENCE,
+                    NOW.strftime(BACKUP_FORMAT)), shell=True)
 
 # TODO use python instead of subprocess to rm stuff
-subprocess.call('rm -f {0}/current'.format(BACKUP_DESTINATION),
+subprocess.call('rm -f {0}{1}'.format(BACKUP_DESTINATION, BACKUP_REFERENCE),
                 shell=True)
-subprocess.call('ln -s {0} {1}/current'.format(
-        NOW.strftime(BACKUP_FORMAT), BACKUP_DESTINATION), shell=True)
+subprocess.call('ln -s {0} {1}{2}'.format(
+        NOW.strftime(BACKUP_FORMAT), BACKUP_DESTINATION, BACKUP_REFERENCE),
+                shell=True)
 
 # backup is done, now delete old ones
 
@@ -58,7 +62,7 @@ subprocess.call('ln -s {0} {1}/current'.format(
 # WEEKS_TO_KEEP_MONTHLIES of monthly backups.
 
 daily_backup_cutoff = NOW - datetime.timedelta(days=DAYLIES_TO_KEEP)
-print "daily cutoff: " + str(daily_backup_cutoff)
+print("daily cutoff: " + str(daily_backup_cutoff))
 
 # I wish this were possible, but months are tricky (what is 6 months
 # from the last day of a month?  you can't just add 6 to the month
@@ -66,23 +70,25 @@ print "daily cutoff: " + str(daily_backup_cutoff)
 # four_months_ago = NOW - datetime.timedelta(months=4)
 # so do this instead:
 monthly_backup_cutoff = NOW - datetime.timedelta(weeks=WEEKS_TO_KEEP_MONTHLIES)
-print "montly cutoff: " + str(monthly_backup_cutoff)
+print("montly cutoff: " + str(monthly_backup_cutoff))
 
 for filename in glob.glob('{0}/*'.format(BACKUP_DESTINATION)):
-    print "looking at " + filename
-    if 'current' in filename:
+    print("looking at " + filename)
+    if BACKUP_REFERENCE in filename:
         continue
     if 'lost+found' in filename:
+        continue
+    if 'pinned' in filename:
         continue
     # turn string directory name into datetime object;
     file_date = datetime.datetime.strptime(filename, '{0}/{1}'.format(
             BACKUP_DESTINATION, BACKUP_FORMAT))
     if file_date < monthly_backup_cutoff:
-        print "monthly cuttoff: deleting " + filename
+        print("monthly cuttoff: deleting " + filename)
         subprocess.call('rm -rf {0}'.format(filename), shell=True)
         continue
     if(file_date < daily_backup_cutoff and
        file_date.day != MONTHLY_DATE_TO_KEEP):
-        print "daily cutoff: deleting " + filename
+        print("daily cutoff: deleting " + filename)
         subprocess.call('rm -rf {0}'.format(filename), shell=True)
         continue
