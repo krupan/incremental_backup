@@ -29,19 +29,38 @@ BACKUP_FORMAT = "backup-%Y-%m-%d_%H:%M:%S"
 # which day of the month to keep for monthlies:
 MONTHLY_DATE_TO_KEEP = 28
 # how many weeks of monthly backups to keep:
-WEEKS_TO_KEEP_MONTHLIES = 26
+WEEKS_TO_KEEP_MONTHLIES = 20
 # how many days of daily backups to keep:
 DAYLIES_TO_KEEP = 7
 
 if not os.path.isdir(BACKUP_DESTINATION + BACKUP_REFERENCE):
-    sys.exit("backup reference: {} doesn't exist".format(
-        BACKUP_DESTINATION + BACKUP_REFERENCE))
+    backups = glob.glob('{0}/backup-*'.format(BACKUP_DESTINATION))
+    latest_backup = max(backups, key=os.path.getctime)
+    print(latest_backup)
+    subprocess.call('ln -fs {0} {1}{2}'.format(
+        latest_backup, BACKUP_DESTINATION, BACKUP_REFERENCE),
+                    shell=True)
 
-# rsync everything starting at the filesystem root, ignoring other
-# mounted filesystems, using hard links for files already found in
-# --link-dest:
-subprocess.call('rsync  -vaxAX --ignore-errors '
-                '--link-dest={0}{1} / {0}/{2}'.format(
+
+# rsync everything starting at the filesystem root, using hard links
+# for files already found in --link-dest.
+#
+# --archive does: --recursive --links --perms --times --group --owner
+# --devices --specials
+subprocess.call('rsync '
+                '--verbose '
+                '--archive '
+                '--acls '
+                '--xattrs '
+                '--ignore-errors '
+                '--exclude /dev '
+                '--exclude /proc '
+                '--exclude /sys '
+                '--exclude /tmp '
+                '--exclude /run '
+                '--exclude /backup '
+                '--link-dest={0}{1} '
+                '/ {0}/{2}'.format(
         BACKUP_DESTINATION, BACKUP_REFERENCE,
                     NOW.strftime(BACKUP_FORMAT)), shell=True)
 
